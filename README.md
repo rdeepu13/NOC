@@ -10,7 +10,7 @@ This README provides pseudocode for calculating average latency and bandwidth us
 
 ```plaintext
 # Function to process a single transaction entry
-function process_transaction(entry, read_latency):
+function process_transaction(entry, read_latency, write_latency):
     # Extract relevant information
     timestamp = entry["Timestamp"]
     txn_type = entry["TxnType"]
@@ -22,14 +22,10 @@ function process_transaction(entry, read_latency):
         data_entry = find_data_entry(timestamp + read_latency)
         if data_entry is not None:
             latency = data_entry["Timestamp"] - timestamp
-            total_latency, num_transactions = update_average_latency(latency, total_latency, num_transactions)
-
-# Function to find corresponding data entry (assuming timestamps are unique)
-function find_data_entry(target_timestamp):
-    for entry in monitor_output:
-        if entry["Timestamp"] == target_timestamp and entry["TxnType"].startswith("Data"):
-            return entry
-    return None
+            update_average_latency(latency)
+    elif txn_type.startswith("Wr"):  # Check for write transactions
+        # Update average latency using write latency
+        update_average_latency(write_latency)
 
 # Function to update average latency
 function update_average_latency(latency, total_latency, num_transactions):
@@ -38,13 +34,14 @@ function update_average_latency(latency, total_latency, num_transactions):
     return total_latency, num_transactions
 
 # Main function to process monitor output
-function analyze_monitor_output(monitor_output, read_latency, cycle_time):
+function analyze_monitor_output(monitor_output, read_latency, write_latency, cycle_time):
     total_latency = 0
     num_transactions = 0
     total_bytes_transferred = 0
 
     for entry in monitor_output:
-        process_transaction(entry, read_latency)
+        process_transaction(entry, read_latency, write_latency)
+        # Calculate total bytes transferred for bandwidth calculation
         if entry["TxnType"].startswith("Wr") or entry["TxnType"].startswith("Rd"):
             total_bytes_transferred += 32  # Assuming each transaction transfers 32B
 
@@ -68,4 +65,4 @@ monitor_output = [
 ]
 
 # Call the main function with monitor output data and other parameters
-analyze_monitor_output(monitor_output, read_latency=10, cycle_time=100000)  # Assuming read latency and cycle time
+analyze_monitor_output(monitor_output, read_latency=10, write_latency=5, cycle_time=100000)  # Assuming read and write latency and cycle time
