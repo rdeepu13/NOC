@@ -22,21 +22,35 @@ function process_transaction(entry, read_latency, write_latency):
         data_entry = find_data_entry(timestamp + read_latency)
         if data_entry is not None:
             latency = data_entry["Timestamp"] - timestamp
-            update_average_latency(latency)
+            update_average_latency(latency, txn_type)
     elif txn_type.startswith("Wr"):  # Check for write transactions
         # Update average latency using write latency
-        update_average_latency(write_latency)
+        update_average_latency(write_latency, txn_type)
 
 # Function to update average latency
-function update_average_latency(latency, total_latency, num_transactions):
-    total_latency += latency
-    num_transactions += 1
-    return total_latency, num_transactions
+function update_average_latency(latency, txn_type):
+    if txn_type.startswith("Rd"):
+        global total_read_latency
+        global num_read_transactions
+        total_read_latency += latency
+        num_read_transactions += 1
+    elif txn_type.startswith("Wr"):
+        global total_write_latency
+        global num_write_transactions
+        total_write_latency += latency
+        num_write_transactions += 1
 
 # Main function to process monitor output
 function analyze_monitor_output(monitor_output, read_latency, write_latency, cycle_time):
-    total_latency = 0
-    num_transactions = 0
+    global total_read_latency
+    global num_read_transactions
+    global total_write_latency
+    global num_write_transactions
+
+    total_read_latency = 0
+    num_read_transactions = 0
+    total_write_latency = 0
+    num_write_transactions = 0
     total_bytes_transferred = 0
 
     for entry in monitor_output:
@@ -45,14 +59,18 @@ function analyze_monitor_output(monitor_output, read_latency, write_latency, cyc
         if entry["TxnType"].startswith("Wr") or entry["TxnType"].startswith("Rd"):
             total_bytes_transferred += 32  # Assuming each transaction transfers 32B
 
-    # Calculate average latency
-    average_latency = total_latency / num_transactions if num_transactions > 0 else 0
+    # Calculate average read latency
+    average_read_latency = total_read_latency / num_read_transactions if num_read_transactions > 0 else 0
+
+    # Calculate average write latency
+    average_write_latency = total_write_latency / num_write_transactions if num_write_transactions > 0 else 0
 
     # Calculate bandwidth
     bandwidth = total_bytes_transferred / cycle_time
 
     # Print results
-    print("Average Latency:", average_latency, "cycles")
+    print("Average Read Latency:", average_read_latency, "cycles")
+    print("Average Write Latency:", average_write_latency, "cycles")
     print("Bandwidth:", bandwidth, "Bytes/sec")
 
 # Sample monitor output data
