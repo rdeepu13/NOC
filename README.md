@@ -9,48 +9,63 @@ This README provides pseudocode for calculating average latency and bandwidth us
 - Bandwidth is calculated as the total number of bytes transferred divided by the total time elapsed.
 
 ```plaintext
-Initialize:
-    readRequests = {}  // Dictionary to store start times of read requests by address
-    totalReadLatency = 0
-    totalReadCount = 0
-    lastTimestamp = 0
-    totalBytesTransferred = 0
+# Function to process a single transaction entry
+function process_transaction(entry, read_latency):
+    # Extract relevant information
+    timestamp = entry["Timestamp"]
+    txn_type = entry["TxnType"]
+    data = entry.get("Data")  # Retrieve data if applicable
 
-For each entry in the simulator monitor output:
-    timestamp = entry.Timestamp
-    txnType = entry.TxnType
-    data = entry.Data
+    # Update latency based on transaction type
+    if txn_type.startswith("Rd"):  # Check for read transactions
+        # Find corresponding data entry (robustness)
+        data_entry = find_data_entry(timestamp + read_latency)
+        if data_entry is not None:
+            latency = data_entry["Timestamp"] - timestamp
+            total_latency, num_transactions = update_average_latency(latency, total_latency, num_transactions)
 
-    // Update the last timestamp encountered
-    Update lastTimestamp to the maximum value of current timestamp
+# Function to find corresponding data entry (assuming timestamps are unique)
+function find_data_entry(target_timestamp):
+    for entry in monitor_output:
+        if entry["Timestamp"] == target_timestamp and entry["TxnType"].startswith("Data"):
+            return entry
+    return None
 
-    If txnType starts with "Rd" (Read request):
-        // Extract address from the txnType (assuming format "Rd AddrX")
-        address = extractAddress(txnType)
-        readRequests[address] = timestamp
+# Function to update average latency
+function update_average_latency(latency, total_latency, num_transactions):
+    total_latency += latency
+    num_transactions += 1
+    return total_latency, num_transactions
 
-    Else If txnType starts with "Data" and extractAddress(txnType) in readRequests:
-        startTimestamp = readRequests[extractAddress(txnType)]
-        latency = timestamp - startTimestamp
-        totalReadLatency += latency
-        totalReadCount += 1
-        // Remove the address from readRequests after processing
-        delete readRequests[extractAddress(txnType)]
+# Main function to process monitor output
+function analyze_monitor_output(monitor_output, read_latency, cycle_time):
+    total_latency = 0
+    num_transactions = 0
+    total_bytes_transferred = 0
 
-    If txnType starts with "Wr" (Write) or "Rd" (Read):
-        totalBytesTransferred += 32  // Each transaction transfers 32B
+    for entry in monitor_output:
+        process_transaction(entry, read_latency)
+        if entry["TxnType"].startswith("Wr") or entry["TxnType"].startswith("Rd"):
+            total_bytes_transferred += 32  # Assuming each transaction transfers 32B
 
-Calculate metrics:
-    If totalReadCount > 0:
-        averageLatency = totalReadLatency / totalReadCount
-    Else:
-        averageLatency = 0
+    # Calculate average latency
+    average_latency = total_latency / num_transactions if num_transactions > 0 else 0
 
-    If lastTimestamp > 0:
-        bandwidth = (totalBytesTransferred / lastTimestamp) * frequency of the NOC
-    Else:
-        bandwidth = 0
+    # Calculate bandwidth
+    bandwidth = total_bytes_transferred / cycle_time
 
-Output:
-    Print "Average Latency: ", averageLatency, " cycles"
-    Print "Bandwidth: ", bandwidth, " bytes/cycle"
+    # Print results
+    print("Average Latency:", average_latency, "cycles")
+    print("Bandwidth:", bandwidth, "Bytes/sec")
+
+# Sample monitor output data
+monitor_output = [
+    {"Timestamp": 0, "TxnType": "Rd Addr1", "Data": None},
+    {"Timestamp": 2, "TxnType": "Wr Addr2", "Data": "hxxxxxxxx"},
+    {"Timestamp": 4, "TxnType": "Wr Addr3", "Data": "hyyyyyyyy"},
+    {"Timestamp": 10, "TxnType": "Data Addr1", "Data": "hzzzzzzzz"},
+    # Add more entries as needed
+]
+
+# Call the main function with monitor output data and other parameters
+analyze_monitor_output(monitor_output, read_latency=10, cycle_time=100000)  # Assuming read latency and cycle time
