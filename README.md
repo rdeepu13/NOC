@@ -84,7 +84,9 @@ monitor_output = [
 
 # Call the main function with monitor output data and other parameters
 analyze_monitor_output(monitor_output, read_latency=10, write_latency=5, cycle_time=100000)  # Assuming read and write latency and cycle time
-```plaintext
+```
+
+
 Complexity Analysis
 Time Complexity:
 Processing a single transaction entry (process_transaction function) involves iterating through the monitor output once, resulting in a time complexity of O(n), where n is the number of entries in the monitor output.
