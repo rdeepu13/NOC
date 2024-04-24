@@ -87,13 +87,13 @@ analyze_monitor_output(monitor_output, read_latency=10, write_latency=5, cycle_t
 ```
 
 
-Complexity Analysis
-Time Complexity:
+## Complexity Analysis
+**Time Complexity:**
 Processing a single transaction entry (process_transaction function) involves iterating through the monitor output once, resulting in a time complexity of O(n), where n is the number of entries in the monitor output.
 Finding the corresponding data entry (find_data_entry function) within the monitor output also has a time complexity of O(n) in the worst case.
 Overall, the time complexity for processing the entire monitor output and calculating average latency and bandwidth is O(n).
 
-Space Complexity:
+**Space Complexity:**
 The space complexity primarily depends on the size of additional data structures used for storing intermediate results.
 In this pseudocode, the primary additional space is used for storing total read and write latencies and the number of read and write transactions, which have a constant space requirement.
 Therefore, the space complexity is O(1), indicating constant space usage regardless of the size of the monitor output.
